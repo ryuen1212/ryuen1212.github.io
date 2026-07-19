@@ -141,6 +141,7 @@
                 <h2 id="modalName">캐릭터 이름</h2>
                 <div id="modalTags"></div>
                 <div class="modal-desc" id="modalDesc">상세 설정 내용</div>
+                <p style="margin-top:15px; font-weight:bold; color:var(--point-color);">짝꿍: <span id="modalPartner" style="font-weight:normal; color:var(--text-sub);"></span></p>
             </div>
         </div>
     </div>
@@ -149,7 +150,7 @@
         // ==========================================
         // 💡 여기에 구글 시트에서 복사한 CSV 주소를 넣어주세요!
         // ==========================================
-        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8r7glozxSVeduTc4gZviISOsmJSZWx68Z_YCLmUQ1E_Oez0d22Sga6EFUoxXKYjyZf6ySeHmQ0sj_/pub?output=csv';
+       const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8r7glozxSVeduTc4gZviISOsmJSZWx68Z_YCLmUQ1E_Oez0d22Sga6EFUoxXKYjyZf6ySeHmQ0sj_/pub?output=csv';
 
         let personaData = [];
         const allAttributes = ["불", "풀", "물", "번개", "얼음", "바람"];
@@ -262,6 +263,7 @@
             document.getElementById('modalName').textContent = char.name;
             document.getElementById('modalDesc').textContent = char.description;
             document.getElementById('modalTags').innerHTML = char.attributes.map(attr => `<span class="tag">${attr}</span>`).join('');
+            document.getElementById('modalPartner').textContent = char.partner;
             
             modalOverlay.classList.add('show');
         }
