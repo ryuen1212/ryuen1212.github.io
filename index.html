@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>페르소나 아카이브</title>
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --point-color: #4a90e2;
+            --border-radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Pretendard', sans-serif; padding: 2rem; }
+
+        header { max-width: 1000px; margin: 0 auto 2rem; text-align: center; }
+        h1 { margin-bottom: 1.5rem; }
+
+        /* 속성 필터 탭 */
+        .filter-container { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 2rem; }
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            border: 1px solid #ddd;
+            background: var(--card-bg);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+        .filter-btn.active {
+            background: var(--point-color);
+            color: white;
+            border-color: var(--point-color);
+        }
+
+        /* 2단 카드 그리드 */
+        .grid-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 가로 2칸 고정 */
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        
+        .card-img-wrapper { width: 40%; aspect-ratio: 1/1; overflow: hidden; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .card-info { padding: 1.5rem; width: 60%; }
+        .card-name { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .tag { 
+            display: inline-block; padding: 0.2rem 0.6rem; 
+            background: #eee; border-radius: 4px; font-size: 0.8rem; margin-right: 4px; margin-bottom: 4px;
+        }
+
+        /* 상세 프로필 모달 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh;
+            border-radius: var(--border-radius); overflow-y: auto;
+            position: relative; padding: 2rem; display: flex; gap: 2rem;
+        }
+        .close-btn { position: absolute; top: 1rem; right: 1.5rem; font-size: 1.5rem; cursor: pointer; border: none; background: none; }
+        
+        .modal-img { width: 40%; border-radius: 8px; object-fit: cover; }
+        .modal-text { width: 60%; }
+        .modal-text h2 { font-size: 2rem; margin-bottom: 1rem; }
+        .modal-desc { line-height: 1.6; white-space: pre-wrap; margin-top: 1rem; }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; } /* 모바일에서는 1단 */
+            .modal-content { flex-direction: column; }
+            .modal-img, .modal-text { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>페르소나 아카이브</h1>
+        <div class="filter-container" id="filterContainer">
+            <!-- 필터 버튼이 자바스크립트로 생성됩니다 -->
+        </div>
+    </header>
+
+    <main class="grid-container" id="cardGrid">
+        <!-- 캐릭터 카드가 자바스크립트로 생성됩니다 -->
+    </main>
+
+    <!-- 모달 창 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">&times;</button>
+            <img src="" alt="캐릭터 이미지" class="modal-img" id="modalImg">
+            <div class="modal-text">
+                <h2 id="modalName">캐릭터 이름</h2>
+                <div id="modalTags"></div>
+                <div class="modal-desc" id="modalDesc">상세 설정 내용</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 💡 이곳에 캐릭터 데이터를 추가/수정하세요!
+        // ==========================================
+        const personaData = [
+            {
+                name: "유이",
+                attributes: ["앵스트", "나의 히어로 아카데미아", "오리지널"],
+                image: "https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=500&q=60", // imgur 링크로 교체하세요
+                description: "검은 반곱슬 머리에 흰 눈. 얼굴에 붕대를 감고 있어 날카로운 인상을 준다.\n누명으로 인해 깊은 상처를 안고 있으며, 관계의 단절 속에서 갈등하는 캐릭터."
+            },
+            {
+                name: "케이",
+                attributes: ["켄가키미", "로맨스"],
+                image: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=500&q=60", // imgur 링크로 교체하세요
+                description: "검가키미 세계관 기반. 검에 얽힌 서사와 특유의 엔딩 스토리를 지닌 인물."
+            },
+            {
+                name: "아무개",
+                attributes: ["판타지", "오리지널"],
+                image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=60",
+                description: "테스트용 세 번째 캐릭터입니다. 줄바꿈도\n이렇게 자연스럽게 적용됩니다."
+            }
+        ];
+
+        // 총 6가지 속성 (원하는 대로 수정 가능)
+        const allAttributes = ["오리지널", "앵스트", "나의 히어로 아카데미아", "켄가키미", "판타지", "로맨스"];
+        let activeFilters = new Set();
+
+        // DOM 요소
+        const filterContainer = document.getElementById('filterContainer');
+        const cardGrid = document.getElementById('cardGrid');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const closeModal = document.getElementById('closeModal');
+
+        // 1. 필터 버튼 렌더링
+        function renderFilters() {
+            allAttributes.forEach(attr => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.textContent = attr;
+                btn.onclick = () => toggleFilter(attr, btn);
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        // 2. 필터 토글 로직
+        function toggleFilter(attr, btn) {
+            if (activeFilters.has(attr)) {
+                activeFilters.delete(attr);
+                btn.classList.remove('active');
+            } else {
+                activeFilters.add(attr);
+                btn.classList.add('active');
+            }
+            renderCards();
+        }
+
+        // 3. 카드 렌더링 (가나다순 정렬 포함)
+        function renderCards() {
+            cardGrid.innerHTML = ''; // 초기화
+            
+            // 필터링 적용
+            let filtered = personaData.filter(char => {
+                if (activeFilters.size === 0) return true;
+                return char.attributes.some(attr => activeFilters.has(attr));
+            });
+
+            // 가나다 순 정렬
+            filtered.sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
+
+            // HTML 생성
+            filtered.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openModal(char);
+
+                const tagsHTML = char.attributes.map(attr => `<span class="tag">${attr}</span>`).join('');
+
+                card.innerHTML = `
+                    <div class="card-img-wrapper">
+                        <img src="${char.image}" alt="${char.name}" class="card-img">
+                    </div>
+                    <div class="card-info">
+                        <div class="card-name">${char.name}</div>
+                        <div>${tagsHTML}</div>
+                    </div>
+                `;
+                cardGrid.appendChild(card);
+            });
+        }
+
+        // 4. 모달 열기/닫기
+        function openModal(char) {
+            document.getElementById('modalImg').src = char.image;
+            document.getElementById('modalName').textContent = char.name;
+            document.getElementById('modalDesc').textContent = char.description;
+            document.getElementById('modalTags').innerHTML = char.attributes.map(attr => `<span class="tag">${attr}</span>`).join('');
+            
+            modalOverlay.classList.add('show');
+        }
+
+        closeModal.onclick = () => modalOverlay.classList.remove('show');
+        modalOverlay.onclick = (e) => { if(e.target === modalOverlay) modalOverlay.classList.remove('show'); }
+
+        // 초기화 실행
+        renderFilters();
+        renderCards();
+    </script>
+</body>
+</html>
