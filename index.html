@@ -3,94 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>캐릭터 도감</title>
-    <!-- PapaParse 라이브러리 로드 -->
+    <title>페르소나 아카이브</title>
+    <!-- 구글 시트 데이터를 읽어오기 위한 도구 (PapaParse) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo&display=swap');
-        
         :root {
-            --bg-color: #f4f4f9;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --text-color: #333;
-            --point-color: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --point-color: #1e3a8a;
+            --border-radius: 12px;
         }
 
-        body {
-            font-family: 'Nanum Myeongjo', serif;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
             background-image: url('https://i.imgur.com/2Gz7K1v.png');
             background-size: cover;
             background-attachment: fixed;
             background-position: center;
-            margin: 0;
-            padding: 20px;
-            color: var(--text-color);
+            color: var(--text-main); 
+            font-family: 'Pretendard', sans-serif; 
+            padding: 2rem; 
+            min-height: 100vh;
         }
 
-        h1 { text-align: center; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        header { max-width: 1000px; margin: 0 auto 2rem; text-align: center; }
+        
+        h1 { 
+            margin-bottom: 1.5rem; 
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            font-size: 2.5rem;
+        }
 
-        .container {
-            max-width: 900px;
+        .filter-container { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 2rem; }
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--text-main);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+        }
+        .filter-btn:hover { background: rgba(255, 255, 255, 0.9); }
+        .filter-btn.active {
+            background: var(--point-color);
+            color: white;
+            border-color: var(--point-color);
+        }
+
+        .grid-container {
+            max-width: 1000px;
             margin: 0 auto;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
         }
 
         .card {
             background: var(--card-bg);
-            border-radius: 15px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
             cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.2); }
+        
+        .card-img-wrapper { width: 40%; aspect-ratio: 1/1; overflow: hidden; background: #e2e8f0; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .card-info { padding: 1.5rem; width: 60%; }
+        .card-name { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: var(--point-color); }
+        .tag { 
+            display: inline-block; padding: 0.3rem 0.7rem; 
+            background: rgba(30, 58, 138, 0.1); 
+            color: var(--point-color);
+            font-weight: 600;
+            border-radius: 6px; font-size: 0.8rem; margin-right: 4px; margin-bottom: 4px;
         }
 
-        .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; }
-        .card h2 { margin: 10px 0; color: var(--point-color); }
-        .card p { margin: 5px 0; font-size: 0.9em; }
-        .partner { font-weight: bold; color: #d35400; }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 15, 40, 0.7); backdrop-filter: blur(6px);
+            display: none; justify-content: center; align-items: center; z-index: 100;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
         
-        #loading { text-align: center; color: white; font-size: 1.2em; margin-top: 50px; }
+        .modal-content {
+            background: #ffffff; width: 90%; max-width: 800px; max-height: 90vh;
+            border-radius: var(--border-radius); overflow-y: auto;
+            position: relative; padding: 2rem; display: flex; gap: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .close-btn { position: absolute; top: 1rem; right: 1.5rem; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: var(--text-main); }
+        
+        .modal-img { width: 40%; border-radius: 8px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #e2e8f0; }
+        .modal-text { width: 60%; }
+        .modal-text h2 { font-size: 2rem; margin-bottom: 1rem; color: var(--point-color); }
+        .modal-desc { line-height: 1.6; white-space: pre-wrap; margin-top: 1rem; color: var(--text-sub); }
+        .modal-partner { margin-top: 1rem; font-weight: bold; color: var(--point-color); }
+
+        #loading { text-align: center; color: white; grid-column: 1 / -1; font-size: 1.2rem; margin-top: 2rem; }
+
+        @media (max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; }
+            .modal-content { flex-direction: column; }
+            .modal-img, .modal-text { width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>나의 캐릭터 도감</h1>
-    <div id="loading">데이터를 불러오는 중입니다...</div>
-    <div class="container" id="grid"></div>
+    <header>
+        <h1>페르소나 아카이브</h1>
+        <div class="filter-container" id="filterContainer"></div>
+    </header>
+
+    <main class="grid-container" id="cardGrid">
+        <div id="loading">구글 시트에서 데이터를 불러오는 중... ⏳</div>
+    </main>
+
+    <!-- 모달 창 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">&times;</button>
+            <img src="" alt="캐릭터 이미지" class="modal-img" id="modalImg">
+            <div class="modal-text">
+                <h2 id="modalName">캐릭터 이름</h2>
+                <div id="modalTags"></div>
+                <div class="modal-partner" id="modalPartner"></div>
+                <div class="modal-desc" id="modalDesc">상세 설정 내용</div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 사용자가 제공한 구글 시트 CSV 링크
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS8r7glozxSVeduTc4gZviISOsmJSZWx68Z_YCLmUQ1E_Oez0d22Sga6EFUoxXKYjyZf6ySeHmQ0sj_/pub?output=csv';
 
-        Papa.parse(GOOGLE_SHEET_URL, {
-            download: true,
-            header: true,
-            complete: function(results) {
-                document.getElementById('loading').style.display = 'none';
-                const grid = document.getElementById('grid');
-                
-                results.data.forEach(row => {
-                    // 빈 행은 건너뜁니다.
-                    if (!row['이름']) return;
+        let personaData = [];
+        const allAttributes = ["불", "풀", "물", "번개", "얼음", "바람"];
+        let activeFilters = new Set();
 
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <img src="${row['이미지링크']}" alt="${row['이름']}">
-                        <h2>${row['이름']}</h2>
-                        <p><strong>속성:</strong> ${row['속성'] || '-'}</p>
-                        <p><strong>설명:</strong> ${row['상세설명'] || '-'}</p>
-                        <p class="partner"><strong>짝꿍:</strong> ${row['짝꿍'] || '없음'}</p>
-                    `;
-                    grid.appendChild(card);
-                });
-            },
-            error: function(err) {
-                document.getElementById('loading').textContent = "데이터를 불러오는 데 실패했습니다. 시트 제목을 확인해주세요.";
-                console.error(err);
+        const filterContainer = document.getElementById('filterContainer');
+        const cardGrid = document.getElementById('cardGrid');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const closeModal = document.getElementById('closeModal');
+
+        function loadData() {
+            if (GOOGLE_SHEET_URL === 'YOUR_GOOGLE_SHEET_CSV_URL') {
+                cardGrid.innerHTML = `<div id="loading">⚠️ 코드에 구글 시트 링크를 아직 넣지 않았습니다!</div>`;
+                return;
             }
-        });
+
+            Papa.parse(GOOGLE_SHEET_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    personaData = results.data
+                        .filter(row => row['이름']) 
+                        .map(row => ({
+                            name: row['이름'],
+                            attributes: row['속성'] ? row['속성'].split(',').map(s => s.trim()) : [],
+                            image: row['이미지링크'] || '',
+                            description: row['상세설명'] || '상세 설명이 없습니다.',
+                            partner: row['짝꿍'] || '없음'
+                        }));
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    renderFilters();
+                    renderCards();
+                },
+                error: function() {
+                    cardGrid.innerHTML = `<div id="loading">데이터를 불러오는데 실패했습니다. 시트 주소를 확인해주세요.</div>`;
+                }
+            });
+        }
+
+        function renderFilters() {
+            filterContainer.innerHTML = '';
+            allAttributes.forEach(attr => {
+                const btn = document.createElement('button');
+                btn.className = 'filter-btn';
+                btn.textContent = attr;
+                btn.onclick = () => toggleFilter(attr, btn);
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        function toggleFilter(attr, btn) {
+            if (activeFilters.has(attr)) {
+                activeFilters.delete(attr);
+                btn.classList.remove('active');
+            } else {
+                activeFilters.add(attr);
+                btn.classList.add('active');
+            }
+            renderCards();
+        }
+
+        function renderCards() {
+            if (!document.getElementById('loading') || document.getElementById('loading').style.display === 'none') {
+                cardGrid.innerHTML = ''; 
+            }
+            
+            let filtered = personaData.filter(char => {
+                if (activeFilters.size === 0) return true;
+                return char.attributes.some(attr => activeFilters.has(attr));
+            });
+
+            filtered.sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
+
+            filtered.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openModal(char);
+
+                const tagsHTML = char.attributes.map(attr => `<span class="tag">${attr}</span>`).join('');
+
+                card.innerHTML = `
+                    <div class="card-img-wrapper">
+                        <img src="${char.image}" alt="${char.name}" class="card-img" onerror="this.src='https://via.placeholder.com/500?text=No+Image'">
+                    </div>
+                    <div class="card-info">
+                        <div class="card-name">${char.name}</div>
+                        <div>${tagsHTML}</div>
+                    </div>
+                `;
+                cardGrid.appendChild(card);
+            });
+        }
+
+        function openModal(char) {
+            const modalImg = document.getElementById('modalImg');
+            modalImg.src = char.image;
+            modalImg.onerror = function() { this.src = 'https://via.placeholder.com/500?text=No+Image'; };
+            
+            document.getElementById('modalName').textContent = char.name;
+            document.getElementById('modalDesc').textContent = char.description;
+            document.getElementById('modalPartner').textContent = "짝꿍: " + char.partner;
+            document.getElementById('modalTags').innerHTML = char.attributes.map(attr => `<span class="tag">${attr}</span>`).join('');
+            
+            modalOverlay.classList.add('show');
+        }
+
+        closeModal.onclick = () => modalOverlay.classList.remove('show');
+        modalOverlay.onclick = (e) => { if(e.target === modalOverlay) modalOverlay.classList.remove('show'); }
+
+        loadData();
     </script>
+</body>
+</html>
